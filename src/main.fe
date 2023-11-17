@@ -4,6 +4,13 @@ contract ERC721 {
     }
 }
 
+struct Gift {
+    #indexed
+    pub gifter: address
+    pub collectible: address
+    pub token_id: u256
+}
+
 struct GiftEnded {}
 
 contract Main {
@@ -17,6 +24,8 @@ contract Main {
         }
 
         ERC721(collectible).transferFrom(from: ctx.msg_sender(), to: ctx.self_address(), token_id)
+
+        ctx.emit(Gift(gifter: ctx.msg_sender(), collectible: collectible, token_id: token_id))
     }
 }
 
