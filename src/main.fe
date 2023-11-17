@@ -1,3 +1,9 @@
+contract ERC721 {
+    pub fn transferFrom(self, from: address, to: address, token_id: u256) -> bool {
+        return true
+    }
+}
+
 contract Main {
     pub fn get(self) -> u256 {
         return 42
