@@ -5,6 +5,8 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Counter} from "../src/Counter.sol";
 
 interface FeContract {
+    event Gift(address indexed gifter, address collectible, uint256 tokenId);
+
     function get() external view returns (uint256);
     function gift(address collectible, uint256 tokenId) external;
 }
