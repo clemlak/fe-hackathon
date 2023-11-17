@@ -11,11 +11,35 @@ struct Gift {
     pub token_id: u256
 }
 
+struct Whitelist {
+    #indexed
+    pub collectible: address
+}
+
 struct GiftEnded {}
+struct NotWhitelisted {}
+struct NotAdmin {}
 
 contract Main {
+    admin: address
+    whitelist: Map<address, bool>
+    has_gifed: Map<address, bool>
+
     pub fn get(self) -> u256 {
         return 42
+    }
+
+    pub fn __init(mut self, ctx: Context) {
+        self.admin = ctx.msg_sender()
+    }
+
+    pub fn whitelist(mut self, mut ctx: Context, collectible: address) {
+        if ctx.msg_sender() != self.admin {
+            revert NotAdmin()
+        }
+
+        self.whitelist[collectible] = true
+        ctx.emit(Whitelist(collectible: collectible))
     }
 
     pub fn gift(mut self, mut ctx: Context, collectible: address, token_id: u256) {
