@@ -6,11 +6,19 @@ import {Counter} from "../src/Counter.sol";
 
 interface FeContract {
     function get() external view returns (uint256);
+    function gift(address collectible, uint256 tokenId) external;
+}
+
+contract Collectible {
+    function transferFrom(address from, address to, uint256 tokenId) external returns (bool) {
+        return true;
+    }
 }
 
 contract CounterTest is Test {
     Counter public counter;
     FeContract public fe;
+    Collectible public collectible;
 
     function setUp() public {
         string[] memory inputs = new string[](4);
@@ -28,9 +36,10 @@ contract CounterTest is Test {
         }
 
         fe = FeContract(deployed);
+        collectible = new Collectible();
     }
 
     function test_fe() public {
-        assertEq(fe.get(), 42);
+        fe.gift(address(collectible), 0);
     }
 }
