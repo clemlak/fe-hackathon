@@ -4,9 +4,19 @@ contract ERC721 {
     }
 }
 
+struct GiftEnded {}
+
 contract Main {
     pub fn get(self) -> u256 {
         return 42
+    }
+
+    pub fn gift(mut self, mut ctx: Context, collectible: address, token_id: u256) {
+        if ctx.block_timestamp() > 1703491200 {
+            revert GiftEnded()
+        }
+
+        ERC721(collectible).transferFrom(from: ctx.msg_sender(), to: ctx.self_address(), token_id)
     }
 }
 
