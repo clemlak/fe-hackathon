@@ -5,10 +5,16 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Counter} from "../src/Counter.sol";
 
 interface FeContract {
+    error GiftEnded();
+    error NotWhitelisted();
+    error NotAdmin();
+
     event Gift(address indexed gifter, address collectible, uint256 tokenId);
 
     function get() external view returns (uint256);
+    function get_admin() external view returns (address);
     function gift(address collectible, uint256 tokenId) external;
+    function whitelist(address collectible) external;
 }
 
 contract Collectible {
@@ -41,7 +47,12 @@ contract CounterTest is Test {
         collectible = new Collectible();
     }
 
+    function test_admin() public {
+        assertEq(fe.get_admin(), address(this));
+    }
+
     function test_fe() public {
+        fe.whitelist(address(collectible));
         fe.gift(address(collectible), 0);
     }
 }
