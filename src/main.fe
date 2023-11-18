@@ -55,8 +55,8 @@ contract Main {
     pub fn __init__(mut self, mut ctx: Context) {
         self.admin = ctx.msg_sender()
         self.last_santa = ctx.msg_sender()
-        self.start_time = 42
-        self.end_time = 1703491200
+        self.start_time = 1701388800
+        self.end_time = 1703505600
     }
 
     pub fn whitelist(mut self, mut ctx: Context, collectible: address) {
@@ -66,6 +66,10 @@ contract Main {
 
         self.whitelist[collectible] = true
         ctx.emit(Whitelist(collectible: collectible))
+    }
+
+    pub fn check_whitelist(self, collectible: address) -> bool {
+        return self.whitelist[collectible]
     }
 
     pub fn gift(mut self, mut ctx: Context, collectible: address, token_id: u256) {
@@ -122,8 +126,7 @@ contract Main {
 
 #test
 fn test_main(mut ctx: Context) {
-    // Create a new `Main` contract via `ctx` and test that `get_42` return 42.
     let main: Main = Main.create(ctx, 0)
-    // assert main.get() == 42
-    // assert main.get_end_time() == 1703491200
+    assert main.get_start_time() == 1701388800
+    assert main.get_end_time() == 1703505600
 }
