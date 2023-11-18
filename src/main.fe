@@ -1,12 +1,19 @@
-contract ERC721 {
-    pub fn transferFrom(self, from: address, to: address, token_id: u256) -> bool {
-        return true
-    }
+use std::buf::{
+    RawCallBuffer,
+    MemoryBufferReader,
+    MemoryBufferWriter
+}
+use std::evm
+
+contract Collectible {
+    pub fn transferFrom(self, from: address, to: address, token_id: u256) {}
 }
 
 struct Gift {
     #indexed
     pub gifter: address
+    #indexed
+    pub receiver: address
     pub collectible: address
     pub token_id: u256
 }
@@ -16,21 +23,40 @@ struct Whitelist {
     pub collectible: address
 }
 
+struct GiftNotStarted {}
 struct GiftEnded {}
 struct NotWhitelisted {}
 struct NotAdmin {}
+struct NoSelfGift {}
 
 contract Main {
     admin: address
     whitelist: Map<address, bool>
-    has_gifed: Map<address, bool>
+    last_santa: address
+    start_time: u256
+    end_time: u256
 
     pub fn get_admin(self) -> address {
         return self.admin
     }
 
-    pub fn __init__(mut self, ctx: Context) {
+    pub fn get_start_time(self) -> u256 {
+        return self.start_time
+    }
+
+    pub fn get_end_time(self) -> u256 {
+        return self.end_time
+    }
+
+    pub fn get_last_santa(self) -> address {
+        return self.last_santa
+    }
+
+    pub fn __init__(mut self, mut ctx: Context) {
         self.admin = ctx.msg_sender()
+        self.last_santa = ctx.msg_sender()
+        self.start_time = 42
+        self.end_time = 1703491200
     }
 
     pub fn whitelist(mut self, mut ctx: Context, collectible: address) {
@@ -43,7 +69,15 @@ contract Main {
     }
 
     pub fn gift(mut self, mut ctx: Context, collectible: address, token_id: u256) {
-        if ctx.block_timestamp() > 1703491200 {
+        if ctx.msg_sender() == self.last_santa {
+            revert NoSelfGift()
+        }
+
+        if ctx.block_timestamp() < self.start_time {
+            revert GiftNotStarted()
+        }
+
+        if ctx.block_timestamp() > self.end_time {
             revert GiftEnded()
         }
 
@@ -51,9 +85,38 @@ contract Main {
             revert NotWhitelisted()
         }
 
-        ERC721(collectible).transferFrom(from: ctx.msg_sender(), to: ctx.self_address(), token_id)
+        // Let's check if the collectible is an ERC721
+        let mut buf: RawCallBuffer = RawCallBuffer::new(
+            input_len: 4 + 32,
+            output_len: 32
+        )
+        let mut writer: MemoryBufferWriter = buf.writer();
+        writer.write(value: u32(0x01ffc9a7))
+        writer.write(value: 0x80ac58cd00000000000000000000000000000000000000000000000000000000)
+        assert ctx.raw_call(addr: collectible, value: 0, buf: buf)
 
-        ctx.emit(Gift(gifter: ctx.msg_sender(), collectible: collectible, token_id: token_id))
+        let mut reader: MemoryBufferReader = buf.reader()
+
+        if reader.read_u256() == 1 {
+            Collectible(collectible).transferFrom(from: ctx.msg_sender(), to: self.last_santa, token_id)
+        } else {
+            let mut buf2: RawCallBuffer = RawCallBuffer::new(
+                input_len: 4 + 32 + 32 + 32 + 32 + 32 + 32,
+                output_len: 0
+            )
+            let mut writer2: MemoryBufferWriter = buf2.writer();
+            writer2.write(value: u32(0xf242432a))
+            writer2.write(value: u256(ctx.msg_sender()))
+            writer2.write(value: u256(self.last_santa))
+            writer2.write(value: token_id)
+            writer2.write(value: 1)
+            writer2.write(value: 0x00000000000000000000000000000000000000000000000000000000000000a0)
+            writer2.write(value: 0x0000000000000000000000000000000000000000000000000000000000000000)
+            assert ctx.raw_call(addr: collectible, value: 0, buf: buf2)
+        }
+
+        ctx.emit(Gift(gifter: ctx.msg_sender(), receiver: self.last_santa, collectible: collectible, token_id: token_id))
+        self.last_santa = ctx.msg_sender()
     }
 }
 
@@ -62,4 +125,5 @@ fn test_main(mut ctx: Context) {
     // Create a new `Main` contract via `ctx` and test that `get_42` return 42.
     let main: Main = Main.create(ctx, 0)
     // assert main.get() == 42
+    // assert main.get_end_time() == 1703491200
 }
