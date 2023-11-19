@@ -5,10 +5,12 @@ use std::buf::{
 }
 use std::evm
 
+// ERC721 interface
 contract Collectible {
     pub fn transferFrom(self, from: address, to: address, token_id: u256) {}
 }
 
+// Emitted when a present is gifted!
 struct Gift {
     #indexed
     pub gifter: address
@@ -18,21 +20,39 @@ struct Gift {
     pub token_id: u256
 }
 
+// Emitted when a collectible is whitelisted
 struct Whitelist {
     #indexed
     pub collectible: address
 }
 
+// Thrown if a gift is made before the start
 struct GiftNotStarted {}
+
+// Thrown if a gift is made after the end
 struct GiftEnded {}
+
+// Thrown if a collectible is not whitelisted
 struct NotWhitelisted {}
+
+// Thrown if the sender is not the admin
 struct NotAdmin {}
+
+// Thrown if the sender tries to gift to themselves
 struct NoSelfGift {}
 
+// Fecret Santa
 contract Main {
+    // Address of the admin
     admin: address
+
+    // Map of whitelisted collectibles
     whitelist: Map<address, bool>
+
+    // Address of the last Santa
     last_santa: address
+
+    // Start and end time of the gift period
     start_time: u256
     end_time: u256
 
@@ -55,7 +75,11 @@ contract Main {
     pub fn __init__(mut self, mut ctx: Context) {
         self.admin = ctx.msg_sender()
         self.last_santa = ctx.msg_sender()
+
+        // Hardcoded start (December the 1st)
         self.start_time = 1701388800
+
+        // Hardcoded end (Christmas day :))
         self.end_time = 1703505600
     }
 
@@ -91,7 +115,7 @@ contract Main {
 
         // Let's check if the collectible is an ERC721
         let mut buf: RawCallBuffer = RawCallBuffer::new(
-            input_len: 4 + 32,
+            input_len: 4 + 32, // 4 bytes for the function selector, 32 bytes for the interface id
             output_len: 32
         )
         let mut writer: MemoryBufferWriter = buf.writer();
@@ -101,9 +125,11 @@ contract Main {
 
         let mut reader: MemoryBufferReader = buf.reader()
 
+        // If the collectible is an ERC721, the call will return `true`, we cast it to `1` here
         if reader.read_u256() == 1 {
             Collectible(collectible).transferFrom(from: ctx.msg_sender(), to: self.last_santa, token_id)
         } else {
+            // The collectible must be an ERC1155, let's try to call `safeTransferFrom`
             let mut buf2: RawCallBuffer = RawCallBuffer::new(
                 input_len: 4 + 32 + 32 + 32 + 32 + 32 + 32,
                 output_len: 0
