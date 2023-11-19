@@ -10,7 +10,7 @@ Fecret Santa is fun project made for the [Fe hackathon](https://taikai.network/f
 
 This version of Secret Santa is a bit different from the original one, here the concept is based on a chain (see what I did there?) of Santas, where anyone can join by sending a gift to the last Santa in the chain, and then they'll be the next to receive a gift!
 
-Santas can gift each other ERC721 and ERC1155 tokens, however the collectibles must be whitelisted beforehand (to keep the Grinch away from ruining the fun!).
+Santas can gift each other ERC721 and ERC1155 tokens, however the collectibles must be whitelisted beforehand (to keep the Grinch from ruining the fun!).
 
 ## Instructions
 
@@ -20,7 +20,7 @@ If you want to test or build the project, be sure to:
 1. Install [Fe](https://fe-lang.org)
 2. Install [Foundry](https://getfoundry.sh)
 
-Then you can, you'll be able to:
+Once that's done, you can:
 
 Run the Fe tests:
 
